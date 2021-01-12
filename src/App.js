@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { BrowserRouter, Link, Route } from "react-router-dom";
 import "./App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.min.js';
+import 'bootstrap/dist/js/bootstrap.min.js'
+import axios from 'axios';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUtensils, faUser } from "@fortawesome/free-solid-svg-icons";
 import Index from './users/Index';
@@ -11,6 +12,7 @@ import userNew from './users/New'
 import Edit from './users/Edit'
 import UserShow from './users/Show';
 import EmpShow from './users/EmpShow';
+import UserOrder from './users/Order';
 import ItemIndex from './items/Index';
 import ItemNew from './items/New';
 import ItemEdit from './items/Edit';
@@ -23,8 +25,10 @@ import CustomorShow from './customer/Show'
 import Confirm from './customer/confirm';
 import ShoppingIndex from './shopping/Index';
 import ShoppingShow from './shopping/Show';
+import Reservation from './shopping/Reservation';
 import { connect } from "react-redux";
 import { logoutAction, cartEmpty } from './store/Store';
+import {  todayOrderExisting } from './shopping/settiing';
 
 
  function App(props){
@@ -42,10 +46,25 @@ import { logoutAction, cartEmpty } from './store/Store';
     let action = logoutAction();
     props.dispatch(action);
 
-    let cartAction = cartEmpty();
+    let cartAction = cartEmpty(); /*買い物かごリセット*/
     props.dispatch(cartAction);
+    /*買い物かご操作のリセット(ストレージ)*/
+
+    axios
+    .get('https://uematsu-backend.herokuapp.com/orders')
+    .then((res)=>{
+       localStorage.setItem('orders', JSON.stringify(res.data));
+       
+    })
+    .catch((error)=>{
+       console.log(error);
+    })
+    setState({
+     data: JSON.parse(localStorage.getItem('orders'))
+   })
     
   }
+
   const getEditId = (id)=>{
 
     setState({
@@ -184,8 +203,17 @@ import { logoutAction, cartEmpty } from './store/Store';
                <Link to="/orders" className="text-light p-3">店頭商品一覧</Link>
              </li>
              <li className="nav-item pt-3 pb-3">
-               <Link to="/shoppings" className="text-light p-3">注文状況</Link>
+               <Link to="/shoppings" className="text-light p-3">本日注文状況</Link>
              </li>
+             {/*明日のオーダーがあれば表示*/ }
+
+             { todayOrderExisting(JSON.parse(localStorage.getItem('shoppings'))).length >0? 
+               <li className="nav-item pt-3 pb-3">
+                 <Link to="/reservation" className="text-light p-3">明日の予約状況</Link>
+               </li> 
+              : 
+              ''
+              }
           
             </>
             /*お客様サイド */
@@ -196,6 +224,9 @@ import { logoutAction, cartEmpty } from './store/Store';
                 </li>
                 <li className="nav-item pt-3 pb-3">
                   <Link to="/users/show" className="text-light p-3">お客様ページ</Link>
+                </li>
+                <li className="nav-item pt-3 pb-3">
+                  <Link to="/users_order" className="text-light p-3">注文確認</Link>
                 </li>
               </>
             : 
@@ -232,6 +263,7 @@ import { logoutAction, cartEmpty } from './store/Store';
       <Route path="/users_empshow"  render={()=><EmpShow
         
         />} />
+      <Route path="/users_order" component={UserOrder} />
       <Route path="/items"  render={()=><ItemIndex 
         itemEditIdget={(item)=>getItemEditId(item)} 
         processIdget={(item)=>getProcessId(item)}
@@ -272,6 +304,12 @@ import { logoutAction, cartEmpty } from './store/Store';
         <ShoppingShow 
           show={state.shoppingShow}
         />} />
+       <Route path="/reservation" 
+        render={()=>
+          <Reservation
+            
+          />} />
+     
     </BrowserRouter>
   )
 }
