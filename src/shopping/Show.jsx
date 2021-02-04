@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Row, Col, Button, Table } from 'react-bootstrap';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
@@ -18,9 +18,7 @@ const  Show = (props)=>{
         props.history.push('/login');  
       }
     }
-    useEffect(()=>{
-      loginUserCheck();
-    })
+   useState(loginUserCheck);
 
     /*ステータスによる条件訳*/
 
@@ -49,13 +47,25 @@ const  Show = (props)=>{
       }
       axios.patch(`https://uematsu-backend.herokuapp.com/shoppings/${props.show.id}`, params)
       .then(function (response) {
+        /*処理後更新*/
+         axios
+            .get('https://uematsu-backend.herokuapp.com/shoppings')
+            .then((res)=>{
+              localStorage.removeItem('shoppings');
+              localStorage.setItem('shoppings', JSON.stringify(res.data));
+              props.history.push('/shoppings');
+            })
+            .catch((error)=>{
+              console.log(error);
+            })
         /*railsからメッセージ*/
         alert(response.data.message); 
+        
       })
       .catch(function(){
         alert('error');
       })
-      props.history.push('/shoppings');
+     
     }
     
   return(

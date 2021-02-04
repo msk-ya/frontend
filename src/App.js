@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { BrowserRouter, Link, Route } from "react-router-dom";
 import "./App.css";
 import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.min.js';
+import 'bootstrap/dist/js/bootstrap.min.js'
+import axios from 'axios';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUtensils, faUser } from "@fortawesome/free-solid-svg-icons";
 import Index from './users/Index';
@@ -11,6 +12,8 @@ import userNew from './users/New'
 import Edit from './users/Edit'
 import UserShow from './users/Show';
 import EmpShow from './users/EmpShow';
+import PhoneEmpShow from './users/PhoneEmpShow';
+import UserOrder from './users/Order';
 import ItemIndex from './items/Index';
 import ItemNew from './items/New';
 import ItemEdit from './items/Edit';
@@ -20,12 +23,16 @@ import OrderNew from './orders/New';
 import OrderEdit from './orders/Edit';
 import CustomorIndex from './customer/Index'
 import CustomorShow from './customer/Show'
+import CustomorPhoneShow  from './customer/PhoneShow'
 import Confirm from './customer/confirm';
+import PhoneConfirm from './customer/PhoneConfirm';
 import ShoppingIndex from './shopping/Index';
 import ShoppingShow from './shopping/Show';
+import Reservation from './shopping/Reservation';
+import SalesIndex from './sale/Index';
 import { connect } from "react-redux";
 import { logoutAction, cartEmpty } from './store/Store';
-
+import {  todayOrderExisting } from './shopping/settiing';
 
  function App(props){
   const[state, setState] = useState({
@@ -42,10 +49,25 @@ import { logoutAction, cartEmpty } from './store/Store';
     let action = logoutAction();
     props.dispatch(action);
 
-    let cartAction = cartEmpty();
+    let cartAction = cartEmpty(); /*買い物かごリセット*/
     props.dispatch(cartAction);
+    /*買い物かご操作のリセット(ストレージ)*/
+
+    axios
+    .get('https://uematsu-backend.herokuapp.com/orders')
+    .then((res)=>{
+       localStorage.setItem('orders', JSON.stringify(res.data));
+       
+    })
+    .catch((error)=>{
+       console.log(error);
+    })
+    setState({
+     data: JSON.parse(localStorage.getItem('orders'))
+   })
     
   }
+
   const getEditId = (id)=>{
 
     setState({
@@ -165,7 +187,7 @@ import { logoutAction, cartEmpty } from './store/Store';
       <div className="collapse navbar-collapse" id="navbarSupportedContent">
         <ul className="navbar-nav mr-auto">
           {props.userData.length >0?
-            props.userData[0].admin == true? 
+            props.userData[0].admin === true? 
              /*従業員サイド */
             <>
               <li class="nav-item pt-3 pb-3 active">
@@ -184,8 +206,20 @@ import { logoutAction, cartEmpty } from './store/Store';
                <Link to="/orders" className="text-light p-3">店頭商品一覧</Link>
              </li>
              <li className="nav-item pt-3 pb-3">
-               <Link to="/shoppings" className="text-light p-3">注文状況</Link>
+               <Link to="/shoppings" className="text-light p-3">本日注文状況</Link>
              </li>
+             <li className="nav-item pt-3 pb-3">
+               <Link to="/sales" className="text-light p-3">売上速報</Link>
+             </li>
+             {/*明日のオーダーがあれば表示*/ }
+
+             { todayOrderExisting(JSON.parse(localStorage.getItem('shoppings'))).length >0? 
+               <li className="nav-item pt-3 pb-3">
+                 <Link to="/reservation" className="text-light p-3">明日の予約状況</Link>
+               </li> 
+              : 
+              ''
+              }
           
             </>
             /*お客様サイド */
@@ -196,6 +230,9 @@ import { logoutAction, cartEmpty } from './store/Store';
                 </li>
                 <li className="nav-item pt-3 pb-3">
                   <Link to="/users/show" className="text-light p-3">お客様ページ</Link>
+                </li>
+                <li className="nav-item pt-3 pb-3">
+                  <Link to="/users_order" className="text-light p-3">注文確認</Link>
                 </li>
               </>
             : 
@@ -229,9 +266,10 @@ import { logoutAction, cartEmpty } from './store/Store';
       <Route path="/users/new" component={userNew} />
       <Route path="/users/edit" render={ () => <Edit id={state.editId} />} />
       <Route path="/users/show" component={UserShow} />
-      <Route path="/users_empshow"  render={()=><EmpShow
-        
-        />} />
+      <Route path="/users_empshow"  render={()=><EmpShow />} />
+      <Route path="/users_phone_empshow"  render={()=><PhoneEmpShow />} />
+
+      <Route path="/users_order" component={UserOrder} />
       <Route path="/items"  render={()=><ItemIndex 
         itemEditIdget={(item)=>getItemEditId(item)} 
         processIdget={(item)=>getProcessId(item)}
@@ -250,18 +288,29 @@ import { logoutAction, cartEmpty } from './store/Store';
           fixItemData={state.customerItem}
         />} />
       <Route path="/customor_show" 
-      render={()=>
-        <CustomorShow 
-          itemData={state.customerItem}
-          changeItemData={(item)=>changeItem(item)}
-         
+        render={()=>
+          <CustomorShow 
+            itemData={state.customerItem}
+            changeItemData={(item)=>changeItem(item)}
+      />} />
+      <Route path="/phone_customor_show" 
+        render={()=>
+          <CustomorPhoneShow 
+            itemData={state.customerItem}
+            changeItemData={(item)=>changeItem(item)}
       />} />
      <Route path="/customer_confirm"
       render={()=>
         <Confirm
           orderData={state.cartItem}
       />} />
-      
+
+     <Route path="/phone_customer_confirm"
+        render={()=>
+          <PhoneConfirm
+              orderData={state.cartItem}
+          />} />
+        
      <Route path="/shoppings" 
       render={()=>
         <ShoppingIndex 
@@ -272,6 +321,13 @@ import { logoutAction, cartEmpty } from './store/Store';
         <ShoppingShow 
           show={state.shoppingShow}
         />} />
+       <Route path="/reservation" 
+        render={()=>
+          <Reservation
+            
+          />} />
+      <Route path="/sales" component={SalesIndex} />
+     
     </BrowserRouter>
   )
 }

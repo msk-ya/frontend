@@ -3,6 +3,7 @@ import { Row, Col, Form, Button, Table } from 'react-bootstrap';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { cartsAdd } from '../store/Store';
+import { sameItemCheck,  selectItemCheck } from './setting';
 
 const table ={
   width: '100%',
@@ -19,6 +20,7 @@ const  Show = (props)=>{
   const[state, setState] = useState({
     number: null,
     process: '',
+    time: null,
     total: props.itemData? props.itemData.price : 0
   })
   const stockOption = ()=>{
@@ -43,7 +45,8 @@ useState(loginUserCheck());
  const numberChange = (e)=>{
    setState({
      number: e.target.value,
-     process: state.process,
+     process: state.process, 
+     time: state.time,
      total:  Number(props.itemData.price) * Number(e.target.value)
    })
 }
@@ -52,6 +55,16 @@ const processChange = (e)=>{
   setState({
     number: state.number,
     process: e.target.value,
+    time: state.time,
+    total:  state.total
+  })
+}
+/********************************受け取り時間************************************************** */
+const timeChange = (e)=>{
+  setState({
+    number: state.number,
+    process: state.process,
+    time: e.target.value,
     total:  state.total
   })
 }
@@ -60,18 +73,31 @@ const processChange = (e)=>{
   const doSubmit = (e)=>{
     e.preventDefault();
     let propData = props.itemData;
+    
+    let check = sameItemCheck(props.buyCarts, propData.name, state.process);
     let stock = Number(props.itemData.stock);
     let minusNumber = Number(state.number);
-    if(minusNumber > 0){
-      stock -= minusNumber;
-      propData.stock = stock;
-      props.changeItemData(propData);
-      let action = cartsAdd({name: propData.name, num: state.number, price: propData.price, process:　state.process});
-      props.dispatch(action);
-      props.history.push('/customor/index');
+    if(minusNumber > 0 &&  selectItemCheck(state.process)){
+      if(!check){
+        stock -= minusNumber;
+        propData.stock = stock;
+        props.changeItemData(propData);
+        let action = cartsAdd({name: propData.name, num: state.number, price: propData.price, process:　state.process, time: state.time});
+        props.dispatch(action);
+        props.history.push('/customor/index');
+      }
+      else{
+        alert('すでに注文しています。');
+      }
+    }
+    else if(minusNumber ===0){
+      alert('数量を入力してください。');
+    }
+    else if(! selectItemCheck(state.process)){
+      alert('加工法を選択してください。');
     }
     else{
-      alert('数量を入力してください。');
+      alert('数量もしくは加工法が未入力です。');
     }
   }
 
@@ -92,6 +118,7 @@ const processChange = (e)=>{
                  <th className="bg-dark text-center text-white">価格</th>
                  <th className="bg-dark text-center text-white">買い上げ数</th>
                  <th className="bg-dark text-center text-white">加工法</th>
+                 <th className="bg-dark text-center text-white">受け取り時間</th>
                  <th className="bg-dark text-center text-white">合計金額</th>
                </thead>
                <tbody>
@@ -112,6 +139,14 @@ const processChange = (e)=>{
                          <option>{process}</option>
                        ))}
                      </select>
+                   </td>
+                   <td>
+                     <input 
+                        type="time" 
+                        value={state.time}  
+                        className="form-control"
+                        onChange={timeChange}
+                     />
                    </td>
                    <td className="font-weight-bold text-center align-middle text-danger">{state.total}</td>
                  </tr>
