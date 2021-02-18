@@ -4,7 +4,7 @@ import './App.css'
 import { withRouter } from 'react-router'
 import axios from 'axios'
 import { connect} from 'react-redux';
-import { sendLoginData, searchSend, ordersSend } from './store/Store';
+import { sendLoginData, searchSend, ordersSend, chartSend } from './store/Store';
 
 const  Login = (props)=>{
 
@@ -40,7 +40,15 @@ const  Login = (props)=>{
               user_id: response.data.id,
               num: 1
             }
-            
+            axios
+                .get('https://uematsu-backend.herokuapp.com/users')
+                .then((res)=>{
+                    localStorage.setItem('users', JSON.stringify(res.data));
+                    
+                })
+                .catch((error)=>{
+                    console.log(error);
+                })       
             axios.post('https://uematsu-backend.herokuapp.com/history/search', data2)
             .then(function (response) {
               let action = searchSend(response.data);
@@ -86,6 +94,15 @@ const  Login = (props)=>{
               localStorage.removeItem('shoppings');
               setState(res.data);
               localStorage.setItem('shoppings', JSON.stringify(res.data));
+            })
+            .catch((error)=>{
+              console.log(error);
+            })
+          axios
+            .get('https://uematsu-backend.herokuapp.com/sales')
+            .then((res)=>{
+                let action = chartSend(res.data);
+                props.dispatch(action);
             })
             .catch((error)=>{
               console.log(error);
