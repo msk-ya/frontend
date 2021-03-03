@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Row, Col, Form, Button, Table } from 'react-bootstrap';
+import { Row, Col, Table } from 'react-bootstrap';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import { cartsAdd } from '../store/Store';
@@ -144,6 +144,8 @@ const timeChange = (e)=>{
                      <input 
                         type="time" 
                         value={state.time}  
+                        min="10:00" max="19:00"
+                        required
                         className="form-control"
                         onChange={timeChange}
                      />

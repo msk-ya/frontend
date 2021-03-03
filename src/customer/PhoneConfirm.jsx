@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Form, Button, Table } from 'react-bootstrap';
+import { Form, Button, Table } from 'react-bootstrap';
 import { withRouter } from 'react-router';
 import { connect } from 'react-redux';
 import axios from 'axios'
@@ -8,12 +8,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faShoppingCart, faFish, faYenSign, faCalculator, faUtensils, faCashRegister } from "@fortawesome/free-solid-svg-icons";
 import { cartDeleteCart, sendLoginData, ordersSend} from '../store/Store';
 import Empty from './NoData';
-import { localstorageChange } from './setting';
+import { localstorageChange, cartValidate } from './setting';
 
-
-const table ={
-  width: '100%'
-}
 
 const title={
   fontFamily: 'ヒラギノ明朝',
@@ -61,7 +57,7 @@ const selectNumber =(number)=>{
 /***********************サーバー送信注文確定***************************************************************** */
 const sendServer = ()=>{
     let result = window.confirm('注文を確定してよろしいですか？');
-    if(result){
+    if(result && cartValidate(props.buyCarts)){  /*カートの受取時間もチェック(現時点空の場合のみ)*/
       const params = new FormData();
     params.append('email', props.userData[0].email);
     params.append('name', props.userData[0].name);
@@ -106,6 +102,9 @@ const sendServer = ()=>{
     props.history.push('/customor');  /*ユーザーページへ移動*/
     props.dispatch(cartEmpty());  /*買い物カゴリセット*/
 
+    }
+    else if(!cartValidate(props.buyCarts)){
+      alert('時間を入力してください。');
     }
     
   }
@@ -219,7 +218,7 @@ const doSelect = (e)=>{
        <div className="bg-white p-2"></div>
        <div className="bg-white pb-3">
           {props.buyCarts.length >0? 
-          <Form>
+          <Form onSubmit={sendServer}>
            <Table bordered className="w-100">
              <tbody>
                {props.buyCarts.map((data,index)=>(
@@ -292,6 +291,8 @@ const doSelect = (e)=>{
                           name={index}
                           type="time" 
                           value={data.time}  
+                          min="10:00" max="19:00"
+                          required
                           className="form-control"
                           onChange={timesChange}
                           />
@@ -321,9 +322,9 @@ const doSelect = (e)=>{
            </Table>
            <div className="text-center">
              <Button  
+               type="submit" 
                variant="primary"
                className="btn-lg btn-block mb-5"
-               onClick={sendServer}
              >
              <span><FontAwesomeIcon icon={faCashRegister} /></span>
              注文確定

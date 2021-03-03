@@ -5,19 +5,32 @@ import { withRouter } from 'react-router'
 import axios from 'axios'
 import { connect} from 'react-redux';
 import { sendLoginData, searchSend, ordersSend, chartSend } from './store/Store';
+import { circularLoading }  from '@yami-beta/react-circular-loading';
+
+
+//プログレスステータス
+const CircularLoading = circularLoading({
+  num: 6,
+  distance: 1,
+  dotSize: 0.5,
+
+});
 
 const  Login = (props)=>{
 
   const[state, setState] = useState({
     email: '',
-    password: ''
+    password: '',
   })
+  const[progress,setProgres] = useState(false)
 
   const newUserComponent = ()=>{
     props.history.push('/users/new');  
   }
   const accesslogin = (e)=>{
+  
     e.preventDefault();
+    setProgres(true);
     let data = {
       email: state.email,
       password: state.password,
@@ -83,7 +96,11 @@ const  Login = (props)=>{
               localStorage.setItem('orders', JSON.stringify(res.data));
               let action = ordersSend(res.data);
               props.dispatch(action);
-              
+              if(localStorage.getItem('orders') && localStorage.getItem('users')){
+                setProgres(false)
+                response.data.admin === true? props.history.push('/orders') :  props.history.push('/users/show');
+              }
+             
           })
           .catch((error)=>{
               console.log(error);
@@ -110,9 +127,10 @@ const  Login = (props)=>{
        setState({
         
       })
-        response.data.admin === true? props.history.push('/') :  props.history.push('/users/show');
+        
           }
           else{
+            setProgres(false)
             alert('ログイン失敗');
           }
       })
@@ -132,8 +150,21 @@ const  Login = (props)=>{
     <div className="text-center mt-5 mb-4">
         <h2 className="text-secondary" data-testid="logintitle">ログイン</h2>
       </div>
+       
       <Row>
-        <Col md={{ span: 4, offset: 4 }} className="p-5 bg-light shadow">
+        <Col md={{ span: 4, offset: 4 }} className="p-5 bg-light border shadow">
+          {/* プログレス */}
+     
+          {progress ===true? 
+            <div id="progress" className=" pl-2 pr-2  bg-white shodow">
+              <p　className="mt-3 font-weight-bold">しばらくお待ちください。</p>
+              <div className="text-center">
+              <CircularLoading />
+              </div>
+            </div>
+          : 
+          ''
+          }
           <Form onSubmit={accesslogin} data-testid="loginForm">
             <Form.Group>
               <Form.Label>メールアドレス</Form.Label>
